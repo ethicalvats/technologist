@@ -9,7 +9,7 @@ const putTodo = (item: Todo) : Promise<Todo[]> => {
     let todos: Todo[] = []
 
     return new Promise((resolve, reject) => {
-        axios.post("http://localhost:8080/api/v1/todos", item)
+        axios.post("http://localhost:3000/api/v1/todos", item)
         .then(res => {
             const data = res.data
             if(data){

@@ -21,15 +21,13 @@ func (e *RaftEngine) run(i int) []*labrpc.Node {
 	e.persistor = raft.MakePersister()
 	applyCh := make(chan raft.ApplyMsg)
 
-	count := 0
-
-	go func(c int) {
+	go func() {
 		for m := range applyCh {
-			fmt.Printf("%d ch msg %v\n", i, m)
-			c++
-			fmt.Println(strconv.Itoa(c) + " total items")
+			fmt.Println("*************************************************************************************")
+			fmt.Printf("%d ch msg %v\n", i, m.CommandIndex)
+			fmt.Println("*************************************************************************************")
 		}
-	}(count)
+	}()
 
 	nodes := make([]*labrpc.Node, 3)
 

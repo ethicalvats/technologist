@@ -39,7 +39,7 @@ export class TodoServiceImpl implements TodoService {
         }
 
         return new Promise((resolve, reject) => {
-            axios.post("http://192.168.0.104:9000/insert", data)
+            axios.post("http://localhost:9000/insert", data)
             .then(res => {
                 const data = res.data
                 let todos: Todo[] = []

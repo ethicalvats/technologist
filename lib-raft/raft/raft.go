@@ -19,12 +19,37 @@ package raft
 
 import (
 	"errors"
+	"fmt"
 	"lib-raft/labrpc"
-	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
 )
+
+var (
+	Info = Teal
+	Warn = Yellow
+	Fata = Red
+)
+
+var (
+	Black   = Color("\033[1;30m%s\033[0m")
+	Red     = Color("\033[1;31m%s\033[0m")
+	Green   = Color("\033[1;32m%s\033[0m")
+	Yellow  = Color("\033[1;33m%s\033[0m")
+	Purple  = Color("\033[1;34m%s\033[0m")
+	Magenta = Color("\033[1;35m%s\033[0m")
+	Teal    = Color("\033[1;36m%s\033[0m")
+	White   = Color("\033[1;37m%s\033[0m")
+)
+
+func Color(colorString string) func(...interface{}) string {
+	sprint := func(args ...interface{}) string {
+		return fmt.Sprintf(colorString,
+			fmt.Sprint(args...))
+	}
+	return sprint
+}
 
 // import "bytes"
 // import "../labgob"
@@ -197,8 +222,8 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) erro
 	now := time.Now()
 	electionReset := rf.electionResetTime
 	if now.After(electionReset) {
-		randT := (((rand.Intn(max-min+1) + min) * ELECTIONTIMEOUT) + ELECTIONTIMEOUT) * 100
-		rf.nextElectionTimeOut = time.Duration(randT) * time.Millisecond //* time.Duration(rf.me+1)
+		// randT := (((rand.Intn(max-min+1) + min) * ELECTIONTIMEOUT) + ELECTIONTIMEOUT) * 100
+		rf.nextElectionTimeOut = time.Second * time.Duration(rf.me.Id+11) //time.Duration(randT)
 		rf.electionResetTime = time.Now()
 	}
 	return nil
@@ -210,6 +235,9 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) erro
 // follower should delete its logs from this point onwards and accept leaders logs
 
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) error {
+
+	DPrintf("recieved AE args", args)
+
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
@@ -227,7 +255,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	//DPrintf("%d term %d received AE from %d args %v", rf.me, rf.currentTerm, args.LeaderId, args)
 	if rf.currentTerm <= args.Term {
 
-		//DPrintf("%d follower prev index %v prev term %v log len %v", rf.me, followerPrevIndex, followerPrevTerm, followerLogLen)
+		DPrintf(Purple("%d follower prev index %v prev term %v log len %v"), rf.me, followerPrevIndex, followerPrevTerm, followerLogLen)
 
 		if followerLogLen > args.PrevLogIndex && args.PrevLogIndex > -1 {
 			followerLogTerm := rf.log[args.PrevLogIndex].Term
@@ -236,6 +264,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 				DPrintf("%d cleaning logs till index %d", rf.me, args.PrevLogIndex)
 				correctedLogs := rf.log[:args.PrevLogIndex]
 				rf.log = correctedLogs
+				reply.Success = true
 			}
 		}
 
@@ -252,6 +281,9 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 			}
 			//DPrintf("%d is follower %t", rf.me, rf.isFollower)
 		} else {
+			DPrintf(Red("followerPrevIndex %d", followerPrevIndex))
+			DPrintf(Red("followerPrevTerm %d", followerPrevTerm))
+			DPrintf(Red("followerLogLen %d", followerLogLen))
 			reply.Success = false
 		}
 
@@ -270,12 +302,13 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	now := time.Now()
 	electionReset := rf.electionResetTime
 	if now.After(electionReset) {
-		randT := (((rand.Intn(max-min+1) + min) * ELECTIONTIMEOUT) + ELECTIONTIMEOUT) * 100
-		rf.nextElectionTimeOut = time.Duration(randT) * time.Millisecond //* time.Duration(rf.me+1)
+		// randT := (((rand.Intn(max-min+1) + min) * ELECTIONTIMEOUT) + ELECTIONTIMEOUT) * 100
+		// rf.nextElectionTimeOut = time.Duration(randT) * time.Millisecond //* time.Duration(rf.me+1)
+		rf.nextElectionTimeOut = time.Second * time.Duration(rf.me.Id+11)
 		rf.electionResetTime = time.Now()
 	}
-	//DPrintf("%d log %v", rf.me, rf.log)
-	//DPrintf("%d reply %v", rf.me, reply)
+	DPrintf("%d log %v", rf.me, rf.log)
+	DPrintf("%d AE reply %v", rf.me, reply)
 	//DPrintf("%d election timeout %v", rf.me, rf.nextElectionTimeOut)
 	return nil
 }
@@ -316,7 +349,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 }
 
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
-	//DPrintf("%d sendAppendEntries %d", rf.me, server)
+	DPrintf("%d sendAppendEntries %d", rf.me, server)
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 	return ok
 }
@@ -340,10 +373,11 @@ type StartReply struct {
 	IsLeader bool
 	Index    int
 	Term     int
+	Log      []LogEntry
 }
 
 type StartArgs struct {
-	Data interface{}
+	Data []byte
 }
 
 func (rf *Raft) Start(command *StartArgs, rep *StartReply) error {
@@ -358,10 +392,10 @@ func (rf *Raft) Start(command *StartArgs, rep *StartReply) error {
 	term = rf.currentTerm
 	rf.mu.Unlock()
 
-	if rf.isLeader {
+	if isLeader {
 		var newEntries []LogEntry
 		newSyncIndex := 0
-		newLog := LogEntry{Term: term, Command: command}
+		newLog := LogEntry{Term: term, Command: command.Data}
 		rf.mu.Lock()
 		rf.log = append(rf.log, newLog)
 		//if rf.commitIndex > 0 {
@@ -393,9 +427,10 @@ func (rf *Raft) Start(command *StartArgs, rep *StartReply) error {
 							Entries:      entries,
 						}
 						reply := AppendEntriesReply{}
-						//DPrintf("%d sending AE to %d", rf.me, peer)
+						DPrintf(Red(" %d sending AE to %d "), rf.me, peer)
+						DPrintf(Teal("Start args "), args.Term, args.LeaderId, args.PrevLogIndex, args.PrevLogTerm, args.LeaderCommit, args.Entries)
 						rf.sendAppendEntries(peer, &args, &reply)
-
+						DPrintf(Teal("Start reply"), peer, reply.Term, reply.Success)
 						if reply.Success {
 							rf.mu.Lock()
 							rf.matchIndex[peer] = prevLogIndex
@@ -403,7 +438,7 @@ func (rf *Raft) Start(command *StartArgs, rep *StartReply) error {
 							rf.mu.Unlock()
 							newSyncIndex = prevLogIndex + 1
 							consensus++
-							DPrintf("%d peer reply %t consensus %d", peer, reply.Success, consensus)
+							DPrintf("%d peer reply %t consensus %d", peer, reply, consensus)
 						} else {
 							rf.mu.Lock()
 							leaderTerm := rf.currentTerm
@@ -417,6 +452,7 @@ func (rf *Raft) Start(command *StartArgs, rep *StartReply) error {
 								rf.electionResetTime = time.Now().Add(10 * time.Second) // push lost leaders election reset by 10s
 							}
 							rf.mu.Unlock()
+							DPrintf(Magenta("prevLogIndex %d term %d leader term %d"), prevLogIndex, reply.Term, leaderTerm)
 							if prevLogIndex > -1 && reply.Term <= leaderTerm {
 								sync, _ := rf.synWithFollower(peer, prevLogIndex)
 								newSyncIndex = prevLogIndex + 1
@@ -431,6 +467,7 @@ func (rf *Raft) Start(command *StartArgs, rep *StartReply) error {
 			}
 		}
 		wg.Wait()
+		DPrintf("consensus", consensus)
 		if consensus > len(rf.peers)/2 {
 			rf.mu.Lock()
 			DPrintf("new sync index %d", newSyncIndex)
@@ -460,6 +497,7 @@ func (rf *Raft) Start(command *StartArgs, rep *StartReply) error {
 	rep.IsLeader = isLeader
 	rep.Index = commitIndex
 	rep.Term = term
+	rep.Log = rf.log
 
 	return nil
 }
@@ -481,18 +519,24 @@ func (rf *Raft) synWithFollower(follower int, followerPrevIndex int) (bool, int)
 				PrevLogTerm:  leaderTerm,
 			}
 			reply := AppendEntriesReply{}
-			DPrintf("%d sending AE to %d", rf.me, follower)
+			DPrintf(Red("%d sending sync AE to %d "), rf.me, follower)
 			rf.sendAppendEntries(follower, &args, &reply)
+			DPrintf(Teal("Sync reply"), follower, reply.Term, reply.Success)
 			if reply.Success {
-				DPrintf("found matching index %d", i)
+				DPrintf(Green("found matching index %d for %d "), i, follower)
 				rf.mu.Lock()
 				logEntries := rf.log[i+1:]
 				rf.mu.Unlock()
 				//logEntries = append(logEntries, log)
-				DPrintf("sending entries %v", logEntries)
+				DPrintf(Teal(" sending entries %v "), logEntries)
 				args.Entries = logEntries
 				rf.sendAppendEntries(follower, &args, &reply)
 				return true, len(logEntries)
+			} else {
+				if i == 0 {
+					args.Entries = rf.log
+					rf.sendAppendEntries(follower, &args, &reply)
+				}
 			}
 		}
 	}
@@ -633,7 +677,7 @@ func (rf *Raft) processResults(voteCount int, candidate int) {
 		go func() {
 			for {
 				rf.beginLeadership(candidate)
-				time.Sleep(20 * time.Millisecond)
+				time.Sleep(10 * time.Second)
 			}
 		}()
 	} else {
@@ -658,8 +702,9 @@ func (rf *Raft) beginLeadership(candidate int) {
 				Entries:      entries,
 			}
 			reply := AppendEntriesReply{}
-			go rf.sendAppendEntries(p, &args, &reply)
-			//DPrintf("%d HB to %d args %v reply %v", rf.me, p, args, reply)
+			rf.sendAppendEntries(p, &args, &reply)
+			DPrintf("%d HB to %d reply %v", rf.me, p, reply)
+			DPrintf("args ", args.Term, args.LeaderId, args.PrevLogIndex, args.PrevLogTerm, args.LeaderCommit, args.Entries)
 			if reply.Term > rf.currentTerm {
 				rf.isLeader = false
 			}
@@ -668,7 +713,7 @@ func (rf *Raft) beginLeadership(candidate int) {
 }
 
 func (rf *Raft) checkTimeout() {
-	ticker := time.NewTicker(10 * time.Millisecond)
+	ticker := time.NewTicker(20 * time.Second)
 	defer ticker.Stop()
 	var elapsed time.Duration
 	var timeoutDuration time.Duration
@@ -725,7 +770,7 @@ func (rf *Raft) checkNewLogEntry(applyCh chan ApplyMsg) {
 			////DPrintf("%d new log entry %v", rf.me, msg)
 			//applyCh <- msg
 		}
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(1 * time.Minute)
 	}
 }
 
@@ -749,10 +794,10 @@ func Make(peers []*labrpc.Node, me *labrpc.Node,
 	rf.log = []LogEntry{}
 
 	//randInt := rand.Intn(MAX - MIN) + MIN
-	randInt := (((rand.Intn(max-min+1) + min) * ELECTIONTIMEOUT) + ELECTIONTIMEOUT) * 100
+	// randInt := (((rand.Intn(max-min+1) + min) * ELECTIONTIMEOUT) + ELECTIONTIMEOUT) * 100
 	//time.Sleep(time.Duration(randInt) * 1000 * time.Millisecond)
 	startTime := time.Now()
-	nextTimeout := time.Millisecond * time.Duration(randInt) // * time.Duration(rf.me+1)
+	nextTimeout := time.Second * time.Duration(rf.me.Id+11) // * time.Duration(randInt)
 	DPrintf("start time %v timeout %v", startTime, startTime.Add(nextTimeout))
 	rf.electionResetTime = startTime
 	rf.nextElectionTimeOut = nextTimeout
