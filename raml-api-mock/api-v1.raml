@@ -1,0 +1,21 @@
+#%RAML 1.0
+---
+title: Todo Rest API
+baseUri: http://localhost:3000/api/{version}
+version: v1
+
+/todos:
+  post:
+    description: Put a new todo and return all the todos
+    body:
+      application/json:
+        example: { "text": "buy milk tomorrow", "id" : "550e8400-e29b-41d4-a716-446655440000" }
+    responses:
+        200:
+          body:
+            application/json:
+              example: [{ "text": "buy milk tomorrow", "id" : "550e8400-e29b-41d4-a716-446655440000" }]
+        500:
+            body:
+                application/json:
+                    example: { "message" : "text and id both are required fields" }

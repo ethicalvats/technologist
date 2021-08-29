@@ -1,0 +1,20 @@
+{
+  "name": "raml-api-mock",
+  "version": "1.0.0",
+  "description": "Todo API mock using RAML",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "api",
+    "mock",
+    "rest"
+  ],
+  "author": "Vatsal M",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "osprey": "^1.0.0"
+  }
+}

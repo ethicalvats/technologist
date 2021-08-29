@@ -1,0 +1,66 @@
+{
+  "name": "api-framework",
+  "version": "1.0.0",
+  "description": "API Framework",
+  "main": "index.js",
+  "scripts": {
+    "dev": "NODE_ENV=development nodemon ./bin/www",
+    "grunt": "grunt",
+    "start": "npm run clean && node ./bin/www",
+    "test": "NODE_ENV=test mocha 'test/**/*.js' ",
+    "server": "ts-node ./src/server.ts",
+    "clean": "npm run grunt",
+    "debug": "npm run clean && node --inspect ./bin/www"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ethicalvats/api-framework"
+  },
+  "author": "Vatsal M",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ethicalvats/api-framework/issues"
+  },
+  "homepage": "https://github.com/ethicalvats/api-framework#README",
+  "dependencies": {
+    "@types/colors": "^1.1.3",
+    "@types/express": "^4.17.13",
+    "axios": "^0.21.1",
+    "body-parser": "^1.19.0",
+    "busboy-body-parser": "^0.3.2",
+    "colors": "^1.4.0",
+    "cookie-parser": "^1.4.5",
+    "cors": "^2.8.5",
+    "dsn-parser": "^1.0.3",
+    "errorhandler": "^1.5.1",
+    "express": "^4.17.1",
+    "grunt": "^1.4.1",
+    "grunt-contrib-copy": "^1.0.0",
+    "grunt-contrib-watch": "^1.1.0",
+    "grunt-ts": "^6.0.0-beta.22",
+    "inversify": "^5.1.1",
+    "inversify-express-utils": "^6.3.2",
+    "method-override": "^3.0.0",
+    "morgan": "^1.10.0",
+    "pug": "^3.0.2",
+    "q": "^1.5.1",
+    "typescript": "^4.4.2",
+    "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "@types/body-parser": "^1.19.1",
+    "@types/cookie-parser": "^1.4.2",
+    "@types/errorhandler": "1.5.0",
+    "@types/method-override": "0.0.32",
+    "@types/morgan": "^1.9.3",
+    "@types/winston": "^2.3.4",
+    "chai": "^4.3.4",
+    "chai-http": "^4.3.0",
+    "chai-json-schema": "^1.5.1",
+    "json-schema-faker": "^0.5.0-rcv.39",
+    "mocha": "^9.1.1",
+    "nodemon": "^2.0.12",
+    "reflect-metadata": "^0.1.13",
+    "typescript": "^2.4.2"
+  }
+}
