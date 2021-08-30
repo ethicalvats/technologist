@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+    raft-node1:
+        container_name: raft-n1
+        build:
+            context: ./lib-raft
+            dockerfile: Dockerfile
+        network_mode: "host"
+        command: ["/app/lib-raft", "0", "9001"]
+
+    raft-node2:
+        container_name: raft-n2
+        build:
+            context: ./lib-raft
+            dockerfile: Dockerfile
+        network_mode: "host"
+        command: ["/app/lib-raft", "1", "9002"]
+
+    raft-node3:
+        container_name: raft-n3
+        build:
+            context: ./lib-raft
+            dockerfile: Dockerfile
+        network_mode: "host"
+        command: ["/app/lib-raft", "2", "9003"]
+
+    rest-api:
+        container_name: rest-api
+        build:
+            context: ./rest-api
+            dockerfile: Dockerfile
+        network_mode: "host"
+
+    fe-app:
+        container_name: fe-app
+        build:
+            context: ./fe-app
+            dockerfile: Dockerfile
+        network_mode: "host"

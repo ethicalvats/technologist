@@ -12,7 +12,7 @@ type Node struct {
 
 func (n *Node) Call(svcMeth string, args interface{}, reply interface{}) bool {
 
-	client, err := rpc.DialHTTP("tcp", "localhost:"+n.Endpoint)
+	client, err := rpc.DialHTTP("tcp", ":"+n.Endpoint)
 	if err != nil {
 		// log.Println("client err: ", err)
 		return false
